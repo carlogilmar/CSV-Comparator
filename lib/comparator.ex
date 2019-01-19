@@ -57,7 +57,7 @@ defmodule Comparator do
 	end
 
 	def find_my_assigned_file() do
-		prepare_data_for_compare( "http://10.31.22.94:8283/api/coursesBanner/201894", "/Users/carlogilmar/Desktop/201895.csv")
+		prepare_data_for_compare( "http://-/api/coursesBanner/201894", "/Users/carlogilmar/Desktop/201895.csv")
 	end
 
   def prepare_data_for_compare( broker_url, file_path ) do
