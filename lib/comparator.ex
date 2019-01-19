@@ -57,19 +57,52 @@ defmodule Comparator do
 	end
 
 	def find_my_assigned_file() do
-		prepare_data_for_compare( "http://10.31.22.94:8283/api/coursesBanner/201894", "/Users/carlogilmar/Desktop/comparator.csv")
+		prepare_data_for_compare( "http://10.31.22.94:8283/api/coursesBanner/201894", "/Users/carlogilmar/Desktop/201895.csv")
 	end
 
   def prepare_data_for_compare( broker_url, file_path ) do
     rows = get_rows_from_file( file_path )
+		IO.puts " === Iniciando ... "
+		IO.puts " Rows del archivo... "
+		IO.inspect length(rows)
+		IO.puts " === Comparando..."
 		broker_rows = get_broker_info( broker_url )
 		comparated_rows =
 		for row <- rows do
 			compare( row, broker_rows )
 			|> review(row)
 		end
-		Enum.filter( comparated_rows, fn {c, row} -> c == false end)
+		wrong_rows = Enum.filter( comparated_rows, fn {c, row} -> c == false end)
+		comparate_wrong_rows( wrong_rows, broker_rows )
   end
+
+	def comparate_wrong_rows( rows, broker ) do
+		for {false, row} <- rows do
+			broker_row = broker |> Enum.find( fn x -> x.nrc == row.nrc and x.begin == row.begin and x.end == row.end end)
+			IO.puts " ======== Wrong row : ============= "
+			get_error broker_row.nrc, row.nrc
+			get_error broker_row.begin, row.begin
+			get_error broker_row.end, row.end
+			get_error broker_row.start_time, row.start_time
+			get_error broker_row.end_time, row.end_time
+			get_error broker_row.monday, row.monday
+			get_error broker_row.tuesday, row.tuesday
+			get_error broker_row.wednesday, row.wednesday
+			get_error broker_row.thursday, row.thursday
+			get_error broker_row.friday, row.friday
+			get_error broker_row.saturday, row.saturday
+			get_error broker_row.sunday, row.sunday
+			IO.puts "============= ============= ============= ============="
+		end
+	end
+
+	def get_error( broker, file) do
+		comparation = broker == file
+		case comparation do
+		  false ->	IO.puts " [fail!!!] Broker: #{broker} File: #{file}"
+		  true ->	IO.puts " [ok] Broker: #{broker} File: #{file}"
+		end
+	end
 
 	def review( {true, true, true, true, true, true, true, true, true, true, true, true}, row ), do: {true, row}
 	def review( _w, row ), do: {false, row}
@@ -77,6 +110,14 @@ defmodule Comparator do
 	def compare( row, broker ) do
 		broker_row = broker |> Enum.find( fn x -> x.nrc == row.nrc and x.begin == row.begin and x.end == row.end end)
 		debugger_row( broker_row, row )
+	end
+
+	def debugger_row( nil, row ) do
+		IO.puts " ::: No se encontró row en el broker::"
+		IO.inspect row
+	end
+
+	def debugger_row( broker_row, row ) do
 		{
 			broker_row.nrc == row.nrc,
 			broker_row.begin == row.begin,
@@ -91,14 +132,7 @@ defmodule Comparator do
 			broker_row.saturday == row.saturday,
 			broker_row.sunday == row.sunday,
 		}
-	end
-
-	def debugger_row( nil, row ) do
-		IO.puts " ::: No se encontró row en el broker::"
-		IO.inspect row
-	end
-
-	def debugger_row( _, _row ), do: IO.puts "ok"
+		end
 
   def get_broker_info( url ) do
     response = HTTPoison.get! url #"http://10.31.22.94:8283/api/coursesBanner/201894"
