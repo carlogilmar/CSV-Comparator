@@ -63,10 +63,16 @@ defmodule Comparator do
   def prepare_data_for_compare( broker_url, file_path ) do
     rows = get_rows_from_file( file_path )
 		broker_rows = get_broker_info( broker_url )
+		comparated_rows =
 		for row <- rows do
 			compare( row, broker_rows )
+			|> review(row)
 		end
+		Enum.filter( comparated_rows, fn {c, row} -> c == false end)
   end
+
+	def review( {true, true, true, true, true, true, true, true, true, true, true, true}, row ), do: {true, row}
+	def review( _w, row ), do: {false, row}
 
 	def compare( row, broker ) do
 		broker_row = broker |> Enum.find( fn x -> x.nrc == row.nrc and x.begin == row.begin and x.end == row.end end)
@@ -103,8 +109,8 @@ defmodule Comparator do
         nrc: course["nrc"],
         begin: parse_date_from_storage(course["startDate"]),
         end: parse_date_from_storage(course["endDate"]),
-        start_time: parse_time(course["beginTime"]),
-        end_time: parse_time(course["endTime"]),
+        start_time: parse_time(course["beginTime"], course),
+        end_time: parse_time(course["endTime"], course),
         monday: course["monday"],
         tuesday: course["tuesday"],
         wednesday: course["wednesday"],
@@ -116,7 +122,8 @@ defmodule Comparator do
     end
   end
 
-  def parse_time( time ) do
+  def parse_time( nil, _course ), do: "00:00"
+  def parse_time( time, course ) do
     << h1::8, h2::8, m1::8, m2::8 >> = time
     <<h1>> <> <<h2>> <> ":" <> <<m1>> <> <<m2>>
   end
